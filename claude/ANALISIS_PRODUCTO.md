@@ -1,4 +1,4 @@
-# EPUB Karaoke · Análisis de producto, UX/UI, monetización y promoción
+# Léemelo · Análisis de producto, UX/UI, monetización y promoción
 
 Fecha: 21 de octubre de 2026. Punto de partida: app web estática (Netlify), sin backend, biblioteca local, voz del navegador.
 

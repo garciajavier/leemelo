@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "epub-karaoke-mvp": {
+    "leemelo": {
       "projectType": "application",
       "root": "",
       "sourceRoot": "src",
@@ -12,7 +12,7 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "outputPath": "dist/epub-karaoke-mvp",
+            "outputPath": "dist/leemelo",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
@@ -74,10 +74,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "epub-karaoke-mvp:build:production"
+              "buildTarget": "leemelo:build:production"
             },
             "development": {
-              "buildTarget": "epub-karaoke-mvp:build:development"
+              "buildTarget": "leemelo:build:development"
             }
           },
           "defaultConfiguration": "development"

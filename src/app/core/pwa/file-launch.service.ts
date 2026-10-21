@@ -4,7 +4,7 @@ interface LaunchParams { files: readonly FileSystemFileHandle[]; }
 interface LaunchQueue { setConsumer(consumer: (params: LaunchParams) => void): void; }
 
 /**
- * "Open with EPUB Karaoke" for the installed app (manifest `file_handlers`, Chromium desktop).
+ * "Open with Léemelo" for the installed app (manifest `file_handlers`, Chromium desktop).
  * Not available in other browsers: listen() is then a no-op.
  */
 @Injectable({ providedIn: 'root' })

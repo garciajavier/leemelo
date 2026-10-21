@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SwUpdate } from '@angular/service-worker';
 import { filter } from 'rxjs';
+import { APP_INFO } from '../app-info';
 import { ToastService } from '../ui/toast.service';
 
 const UPDATE_TOAST_MS = 15000;
@@ -16,7 +17,7 @@ export class AppUpdateService {
     if (!this.updates.isEnabled) return;
     this.updates.versionUpdates
       .pipe(filter(event => event.type === 'VERSION_READY'), takeUntilDestroyed())
-      .subscribe(() => this.toast.info('Hay una nueva versión de EPUB Karaoke.', {
+      .subscribe(() => this.toast.info(`Hay una nueva versión de ${APP_INFO.name}.`, {
         durationMs: UPDATE_TOAST_MS,
         action: { label: 'Actualizar', run: () => document.location.reload() },
       }));

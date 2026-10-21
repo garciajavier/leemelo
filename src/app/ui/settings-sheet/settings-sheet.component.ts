@@ -8,11 +8,12 @@ import { SLEEP_TIMER_OPTIONS, SleepTimerService } from '../../narration/sleep-ti
 import { VoicesService } from '../../narration/voices.service';
 import { FocusTrapDirective } from '../shared/focus-trap.directive';
 import { IconComponent } from '../shared/icon.component';
+import { SupportLinkComponent } from '../shared/support-link.component';
 
 /** Voice, rate, sleep timer, typography and theme: bottom sheet on phones, floating panel on larger screens. */
 @Component({
   selector: 'app-settings-sheet',
-  imports: [IconComponent, FocusTrapDirective],
+  imports: [IconComponent, FocusTrapDirective, SupportLinkComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './settings-sheet.component.html',
   styleUrl: './settings-sheet.component.css',

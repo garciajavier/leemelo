@@ -1,7 +1,7 @@
 {
-  "name": "EPUB Karaoke · Lectura con voz sincronizada",
-  "short_name": "EPUB Karaoke",
-  "description": "Lee y escucha tus libros EPUB con el texto resaltado palabra a palabra.",
+  "name": "Léemelo · Escucha tus libros palabra a palabra",
+  "short_name": "Léemelo",
+  "description": "Léemelo lee en voz alta tus libros EPUB y resalta cada palabra mientras la pronuncia.",
   "lang": "es",
   "dir": "ltr",
   "id": "/",

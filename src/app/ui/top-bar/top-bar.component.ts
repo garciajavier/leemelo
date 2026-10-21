@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { APP_INFO } from '../../core/app-info';
 import { LayoutService } from '../../core/ui/layout.service';
 import { IconComponent } from '../shared/icon.component';
 import { ImportButtonComponent } from '../shared/import-button.component';
@@ -12,4 +13,5 @@ import { ImportButtonComponent } from '../shared/import-button.component';
 })
 export class TopBarComponent {
   protected readonly layout = inject(LayoutService);
+  protected readonly app = APP_INFO;
 }

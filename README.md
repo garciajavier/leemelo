@@ -1,4 +1,6 @@
-# EPUB Karaoke (Angular 20)
+# Léemelo
+
+*Escucha tus libros palabra a palabra* · [leemelo.netlify.app](https://leemelo.netlify.app) · Angular 20
 
 Lector EPUB sin DRM que lee el libro en voz alta y resalta cada palabra mientras la pronuncia. Diseño mobile-first.
 
@@ -24,20 +26,20 @@ Node.js 22.12+ (o 20.19+) y npm.
 ```bash
 npm install
 npm start            # http://localhost:4200
-npm run build        # build de producción en dist/epub-karaoke-mvp/browser
+npm run build        # build de producción en dist/leemelo/browser
 ```
 
 ## Publicar en Netlify
 
 El repositorio ya incluye la configuración:
 
-- `netlify.toml`: comando `npm run build`, carpeta `dist/epub-karaoke-mvp/browser` y Node 22.
+- `netlify.toml`: comando `npm run build`, carpeta `dist/leemelo/browser` y Node 22.
 - `public/_headers`: cabeceras de seguridad (CSP compatible con epub.js, `nosniff`, `Referrer-Policy`, `Permissions-Policy`). Al estar en `public/` se copian al build, así que valen tanto para despliegues desde Git como para arrastrar la carpeta.
 
-Opciones:
+Opciones (al crear el sitio en Netlify, ponle de nombre **leemelo** para que la dirección sea `leemelo.netlify.app`):
 
 1. **Desde Git** (recomendado): sube el proyecto a GitHub/GitLab y en Netlify elige *Add new site → Import an existing project*. Netlify lee `netlify.toml`; cada push a la rama principal publica una versión nueva.
-2. **Arrastrar y soltar**: ejecuta `npm run build` y arrastra la carpeta `dist/epub-karaoke-mvp/browser` en *Netlify → Sites → Deploy manually*.
+2. **Arrastrar y soltar**: ejecuta `npm run build` y arrastra la carpeta `dist/leemelo/browser` en *Netlify → Sites → Deploy manually*.
 
 La app es 100 % estática: no tiene backend, funciones ni base de datos. Los libros y preferencias se quedan en el navegador de cada usuario y la voz la genera el propio navegador.
 
@@ -81,7 +83,7 @@ src/app/
 - **Abstracciones inyectables:** `SPEECH_ENGINE`, `READING_SURFACE`, `KEY_VALUE_STORE` y `LOCATIONS_CACHE` se pueden sustituir. Por ejemplo, un TTS en la nube o un almacenamiento falso en pruebas, sin tocar a quien los usa.
 - **Estado con signals:** no hay `detectChanges()` manual. Los eventos del iframe de epub.js actualizan signals y Angular repinta.
 - **Estilos:** `src/styles.css` contiene los tokens de diseño y las piezas comunes (botones, chips, portadas, filas). Cada componente lleva su propia maquetación, mobile-first.
-- **Persistencia:** IndexedDB (base `epub-karaoke`) guarda los libros. `localStorage` guarda la posición (`<id>:position`), los marcadores (`<id>:bookmarks`), el progreso (`<id>:progress`) y las preferencias (`epub-karaoke:prefs`).
+- **Persistencia:** IndexedDB (base `epub-karaoke`, nombre heredado para conservar los datos) guarda los libros. `localStorage` guarda la posición (`<id>:position`), los marcadores (`<id>:bookmarks`), el progreso (`<id>:progress`) y las preferencias (`epub-karaoke:prefs`).
 
 ## Limitaciones conocidas
 

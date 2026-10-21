@@ -79,6 +79,13 @@ Durante las pruebas locales se encontraron estos problemas:
 
 **Última verificación (21/10/2026):** `npm run build` compila sin errores y, con `ng serve` en `http://localhost:4300/`, Chrome headless renderiza la pantalla inicial con la consola limpia (solo mensajes de Vite y «Angular is running in development mode»). **Sigue sin confirmarse que se pueda abrir y narrar un EPUB real**: requiere prueba manual con fichero y audio.
 
+### 3.7 Nombre y apoyo (21/10/2026)
+
+- **Nuevo nombre: Léemelo** («Escucha tus libros palabra a palabra»). Dirección prevista: `leemelo.netlify.app` (estaba libre al comprobarlo). El nombre y el lema están centralizados en `src/app/core/app-info.ts`.
+- Paquete, proyecto de Angular y carpeta de build renombrados a `leemelo` (`dist/leemelo/browser`; `netlify.toml` actualizado). Las claves de almacenamiento conservan el prefijo `epub-karaoke` para no perder datos guardados.
+- **Ko-fi:** enlace «¿Te gusta Léemelo? Invítame a un café» al pie del panel lateral y de los ajustes (https://ko-fi.com/javiergarciajimenez).
+- Analítica: se pospone (no se recogen datos, así que no hace falta banner de cookies).
+
 ### 3.6 Fase 1 del plan y mejoras de UX/UI (21/10/2026)
 
 - **Clásicos gratis y libro de muestra:** 8 EPUB de dominio público de Project Gutenberg (descargados del espejo oficial, sin modificar) con sus portadas. En el primer uso aparece «Probar con Don Quijote» y una cuadrícula de clásicos; también hay una sección en la biblioteca.
