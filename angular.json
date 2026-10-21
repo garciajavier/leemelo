@@ -36,7 +36,8 @@
               "lodash",
               "marks-pane",
               "path-webpack"
-            ]
+            ],
+            "serviceWorker": "ngsw-config.json"
           },
           "configurations": {
             "production": {

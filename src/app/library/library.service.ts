@@ -3,9 +3,13 @@ import { PreferencesService } from '../core/preferences/preferences.service';
 import { ToastService, errorMessage } from '../core/ui/toast.service';
 import { OpenedBook, ReaderService } from '../reader/reader.service';
 import { BookDataRepository } from './book-data.repository';
+import { CLASSICS, Classic, classicBookId, classicFileUrl } from './classics';
 import { LibraryEntry, LibraryRepository } from './library.repository';
 
-/** Library use cases: import, open, remove and restore the last book; exposes entries, covers and % read. */
+/** Time to undo removing a book before it is actually deleted. */
+const UNDO_REMOVE_MS = 6000;
+
+/** Library use cases: import, open (also bundled classics), remove with undo, and restore the last book. */
 @Injectable({ providedIn: 'root' })
 export class LibraryService {
   private readonly repo = inject(LibraryRepository);
@@ -14,12 +18,16 @@ export class LibraryService {
   private readonly prefs = inject(PreferencesService);
   private readonly toast = inject(ToastService);
 
-  private readonly _entries = signal<LibraryEntry[]>([]);
+  private readonly stored = signal<LibraryEntry[]>([]);
+  private readonly pendingRemoval = signal<ReadonlySet<string>>(new Set());
   private readonly _covers = signal<Record<string, string>>({});
   private readonly storedProgress = signal<Record<string, number>>({});
+  private readonly _busy = signal(false);
 
-  /** Most recently opened first. */
-  readonly entries = this._entries.asReadonly();
+  /** Most recently opened first (books pending removal are hidden). */
+  readonly entries = computed(() => this.stored().filter(e => !this.pendingRemoval().has(e.id)));
+  /** Bundled classics not yet in the library. */
+  readonly availableClassics = computed(() => CLASSICS.filter(c => !this.entries().some(e => e.id === classicBookId(c))));
   /** Object URLs of the covers, by book id. */
   readonly covers = this._covers.asReadonly();
   /** % read by book id; the open book reports live progress. */
@@ -30,6 +38,8 @@ export class LibraryService {
     if (openId && percent !== null) progress[openId] = percent;
     return progress;
   });
+  /** True while a bundled classic is being downloaded. */
+  readonly busy = this._busy.asReadonly();
 
   /** Loads the library and reopens the last book read. */
   async restore(): Promise<void> {
@@ -39,18 +49,30 @@ export class LibraryService {
       this.toast.error('La biblioteca no está disponible en este navegador (almacenamiento bloqueado). Puedes seguir abriendo libros.');
       return;
     }
-    const last = this._entries().find(e => e.id === this.prefs.lastBookId());
+    const last = this.entries().find(e => e.id === this.prefs.lastBookId());
     if (last) await this.open(last);
   }
 
   async importFile(file: File): Promise<void> {
     if (!file.name.toLowerCase().endsWith('.epub')) { this.toast.error('Solo se admiten archivos .epub'); return; }
-    const id = `epub-karaoke:${file.name}:${file.size}:${file.lastModified}`;
-    const existing = this._entries().find(e => e.id === id);
-    const opened = await this.openFile(id, file, file.name);
-    if (!opened) return;
-    await this.record(id, file, file.name, opened, existing);
-    if (!existing) this.toast.info(`«${opened.title}» se ha añadido a tu biblioteca`);
+    await this.add(`epub-karaoke:${file.name}:${file.size}:${file.lastModified}`, file, file.name);
+  }
+
+  async openClassic(classic: Classic): Promise<void> {
+    const existing = this.entries().find(e => e.id === classicBookId(classic));
+    if (existing) { await this.open(existing); return; }
+    this._busy.set(true);
+    try {
+      const response = await fetch(classicFileUrl(classic));
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const file = await response.blob();
+      this._busy.set(false);
+      await this.add(classicBookId(classic), file, `${classic.slug}.epub`);
+    } catch (err) {
+      this.toast.error(`No se pudo descargar «${classic.title}»: ${errorMessage(err)}`);
+    } finally {
+      this._busy.set(false);
+    }
   }
 
   async open(entry: LibraryEntry): Promise<void> {
@@ -67,18 +89,53 @@ export class LibraryService {
     if (opened) await this.record(entry.id, file, entry.fileName, opened, entry);
   }
 
-  /** Removes the book with its bookmarks, position and progress. */
-  async remove(entry: LibraryEntry): Promise<void> {
+  /** Hides the book at once and deletes it (with bookmarks, position and progress) unless the user undoes it. */
+  remove(entry: LibraryEntry): void {
+    this.pendingRemoval.update(ids => new Set(ids).add(entry.id));
+    const wasOpen = entry.id === this.reader.bookId();
+    if (wasOpen) this.reader.close();
+    const commit = setTimeout(() => void this.commitRemoval(entry), UNDO_REMOVE_MS);
+    this.toast.info(`«${entry.title}» se ha quitado de la biblioteca`, {
+      durationMs: UNDO_REMOVE_MS,
+      action: {
+        label: 'Deshacer',
+        run: () => {
+          clearTimeout(commit);
+          this.unhide(entry.id);
+          if (wasOpen) void this.open(entry);
+        },
+      },
+    });
+  }
+
+  private async add(id: string, file: Blob, fileName: string): Promise<void> {
+    const existing = this.stored().find(e => e.id === id);
+    if (existing) this.unhide(id);
+    const opened = await this.openFile(id, file, fileName);
+    if (!opened) return;
+    await this.record(id, file, fileName, opened, existing);
+    if (!existing) this.toast.info(`«${opened.title}» se ha añadido a tu biblioteca`);
+  }
+
+  private async commitRemoval(entry: LibraryEntry): Promise<void> {
     try {
       await this.repo.remove(entry.id);
       this.bookData.clear(entry.id);
       if (entry.id === this.prefs.lastBookId()) this.prefs.setLastBook('');
-      if (entry.id === this.reader.bookId()) this.reader.close();
       await this.refresh();
-      this.toast.info(`«${entry.title}» se ha quitado de la biblioteca`);
     } catch (err) {
       this.toast.error(`No se pudo quitar de la biblioteca: ${errorMessage(err)}`);
+    } finally {
+      this.unhide(entry.id);
     }
+  }
+
+  private unhide(id: string): void {
+    this.pendingRemoval.update(ids => {
+      const next = new Set(ids);
+      next.delete(id);
+      return next;
+    });
   }
 
   private async openFile(id: string, file: Blob, fileName: string): Promise<OpenedBook | undefined> {
@@ -120,7 +177,7 @@ export class LibraryService {
       const value = this.bookData.progress(entry.id);
       if (value !== undefined) progress[entry.id] = value;
     }
-    this._entries.set(entries);
+    this.stored.set(entries);
     this._covers.set(covers);
     this.storedProgress.set(progress);
   }

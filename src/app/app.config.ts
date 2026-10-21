@@ -1,4 +1,5 @@
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, isDevMode, provideZoneChangeDetection } from '@angular/core';
+import { provideServiceWorker } from '@angular/service-worker';
 import { LibraryRepository } from './library/library.repository';
 import { READING_SURFACE } from './narration/reading-surface';
 import { LOCATIONS_CACHE } from './reader/locations-cache';
@@ -10,5 +11,7 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     { provide: READING_SURFACE, useExisting: ReaderService },
     { provide: LOCATIONS_CACHE, useExisting: LibraryRepository },
+    // Offline support and installable app (production builds only).
+    provideServiceWorker('ngsw-worker.js', { enabled: !isDevMode(), registrationStrategy: 'registerWhenStable:30000' }),
   ],
 };

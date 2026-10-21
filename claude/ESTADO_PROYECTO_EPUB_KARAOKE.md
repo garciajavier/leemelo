@@ -79,6 +79,19 @@ Durante las pruebas locales se encontraron estos problemas:
 
 **Última verificación (21/10/2026):** `npm run build` compila sin errores y, con `ng serve` en `http://localhost:4300/`, Chrome headless renderiza la pantalla inicial con la consola limpia (solo mensajes de Vite y «Angular is running in development mode»). **Sigue sin confirmarse que se pueda abrir y narrar un EPUB real**: requiere prueba manual con fichero y audio.
 
+### 3.6 Fase 1 del plan y mejoras de UX/UI (21/10/2026)
+
+- **Clásicos gratis y libro de muestra:** 8 EPUB de dominio público de Project Gutenberg (descargados del espejo oficial, sin modificar) con sus portadas. En el primer uso aparece «Probar con Don Quijote» y una cuadrícula de clásicos; también hay una sección en la biblioteca.
+- **Narración frase a frase:** resaltado a dos niveles (frase y palabra) y botones de frase anterior/siguiente mientras se lee. Sin eventos de palabra el resaltado sigue siendo preciso por frase, y se evita que el navegador corte las locuciones largas.
+- **Temporizador de apagado** (15/30/60 min o fin del capítulo), **tiempo restante** estimado y **probar voz**, con las voces «natural» primero y un consejo para elegirlas.
+- **Deshacer** al quitar un libro (en lugar de `confirm()`); si era el abierto, se reabre.
+- **Pistas de primer uso** («Leer desde clic» y deslizar para pasar página).
+- **Tema automático** (sigue el sistema), **tipo de letra** (Atkinson Hyperlegible y OpenDyslexic con licencia OFL, servidas desde el propio dominio) e **interlineado**.
+- **Accesibilidad:** foco atrapado en el panel lateral y en la hoja de ajustes con devolución al cerrar, y región `aria-live` con el capítulo.
+- **PWA:** manifiesto, iconos (incluido maskable y de iOS), service worker de Angular (app precargada; clásicos, portadas y fuentes bajo demanda), aviso «Actualizar» con una versión nueva y `file_handlers` para abrir EPUB desde el sistema.
+- **Verificación:** prueba de punta a punta ampliada a 36 comprobaciones (móvil táctil y escritorio, build de producción con CSP). Todo OK, service worker activo y consola limpia.
+- **Pendiente de datos del propietario:** dominio propio, aviso legal y privacidad, analítica sin cookies y enlace de donaciones.
+
 ### 3.5 Refactor SOLID y control de versiones (21/10/2026)
 
 - **Refactor:** el antiguo `AppComponent` (~600 líneas, con todas las responsabilidades) se ha dividido en servicios por responsabilidad (`core/`, `library/`, `reader/`, `narration/`) y componentes por zona (`ui/`). La estructura está en el README.

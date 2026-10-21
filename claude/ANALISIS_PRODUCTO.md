@@ -100,6 +100,6 @@ Las opciones, de más a menos recomendable para este producto:
 
 | Fase | Contenido | Objetivo |
 |---|---|---|
-| **1 · Lanzamiento** (1–2 semanas) | Publicar en Netlify con dominio propio, libro de muestra y biblioteca de clásicos (≈20 títulos), PWA, frase anterior/siguiente, temporizador, analítica sin cookies, legales, donaciones | Primeros usuarios y medir activación |
+| **1 · Lanzamiento** (1–2 semanas) | ✅ Libro de muestra y clásicos (8 títulos), PWA, frase anterior/siguiente, temporizador y mejoras UX/UI de alta prioridad. ⏳ Pendiente (necesita datos del propietario): dominio, legales, analítica sin cookies, donaciones | Primeros usuarios y medir activación |
 | **2 · Retención** (1 mes) | Resaltado de frase, probar voz, deshacer, tipografía, estadísticas y rachas, buscar, exportar biblioteca. Vídeos cortos y SEO de clásicos | Que vuelvan cada día |
 | **3 · Ingresos** | Login (Supabase) + sincronización + voces premium con Stripe. Probar el modo idiomas como plan de pago | Primeros ingresos recurrentes |

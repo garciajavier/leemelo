@@ -1,5 +1,7 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { PreferencesService } from '../../core/preferences/preferences.service';
 import { LayoutService } from '../../core/ui/layout.service';
+import { estimateSeconds, formatDuration } from '../../narration/reading-time';
 import { ReaderService } from '../../reader/reader.service';
 import { TocItem } from '../../reader/toc';
 
@@ -17,6 +19,7 @@ import { TocItem } from '../../reader/toc';
         <input class="seek" type="range" min="0" max="100" step="1" [value]="reader.percent() ?? 0" [disabled]="reader.percent() === null"
                (change)="seek($event)" aria-label="Ir a otro punto del libro">
         <small>{{ reader.chapter() || reader.title() }}{{ reader.page() ? ' · ' + reader.page() : '' }}</small>
+        @if (remaining(); as time) { <small class="remaining">{{ time }}</small> }
       </div>
       @if (!reader.toc().length) { <p class="empty-note">Este libro no incluye índice.</p> }
       @for (item of reader.toc(); track $index) {
@@ -36,6 +39,7 @@ import { TocItem } from '../../reader/toc';
     .progress-top .overline { margin: 0; }
     .progress-top strong { font-size: 18px; font-variant-numeric: tabular-nums; }
     .seek { width: 100%; height: 28px; margin: 6px 0 2px; accent-color: var(--brand); }
+    .remaining { margin-top: 2px; color: var(--text) !important; }
     .progress-card small { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 12px; color: var(--muted); }
     .toc-item {
       position: relative; display: flex; align-items: center; gap: 8px; flex: none;
@@ -51,6 +55,18 @@ import { TocItem } from '../../reader/toc';
 export class TocPanelComponent {
   protected readonly reader = inject(ReaderService);
   private readonly layout = inject(LayoutService);
+  private readonly prefs = inject(PreferencesService);
+
+  /** Listening time left at the current rate, e.g. "Quedan ~12 min del capítulo · ~3 h 05 min del libro". */
+  protected readonly remaining = computed(() => {
+    const rate = this.prefs.rate();
+    const parts: string[] = [];
+    const chapter = this.reader.chapterRemainingChars();
+    const book = this.reader.bookRemainingChars();
+    if (chapter !== null) parts.push(`${formatDuration(estimateSeconds(chapter, rate))} del capítulo`);
+    if (book !== null) parts.push(`${formatDuration(estimateSeconds(book, rate))} del libro`);
+    return parts.length ? `Quedan ${parts.join(' · ')}` : '';
+  });
 
   protected go(item: TocItem): void {
     this.layout.closeSidebar();

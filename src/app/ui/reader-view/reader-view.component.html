@@ -1,4 +1,7 @@
 <main class="stage">
+  <!-- Announces chapter changes to screen readers. -->
+  <span class="sr-only" aria-live="polite">{{ reader.chapter() }}</span>
+
   @if (reader.loaded()) {
     <div class="reader-head">
       <button class="chapter-btn" (click)="layout.openSidebar('toc')" title="Ver índice">
@@ -19,7 +22,7 @@
     </div>
   }
 
-  <div class="paper" [attr.data-reader]="prefs.theme()" [class.idle]="!reader.loaded()">
+  <div class="paper" [attr.data-reader]="themes.readerTheme()" [class.idle]="!reader.loaded()">
     <!-- Always laid out (only concealed) so epub.js can measure it when a book opens. -->
     <div #viewer class="viewer" [class.concealed]="!reader.loaded()"></div>
 
@@ -28,14 +31,22 @@
       <button class="turn next" (click)="reader.next()" aria-label="Página siguiente"><app-icon name="chevron-right" /></button>
     }
 
-    @if (!reader.loaded() && !reader.loading()) {
+    @if (!reader.loaded() && !reader.loading() && !library.busy()) {
       <div class="empty">
         <img class="empty-logo" src="logo.svg" alt="">
-        <h1>Tu próxima lectura empieza aquí</h1>
-        <p>Importa un EPUB y escúchalo con el texto resaltado palabra a palabra. Se guarda en tu biblioteca para retomarlo donde lo dejaste.</p>
-        <app-import-button variant="hero" />
-        <p class="fine">o arrástralo aquí · EPUB sin DRM · los libros no salen de tu dispositivo</p>
-        @if (library.entries().length) {
+        @if (!library.entries().length) {
+          <h1>Escucha tus libros, palabra a palabra</h1>
+          <p>La voz lee y el texto se resalta mientras avanza. Pruébalo ahora con un clásico o importa tu propio EPUB.</p>
+          <div class="cta">
+            <button class="btn primary lg" (click)="library.openClassic(sample)">
+              <app-icon name="play" />Probar con «{{ sample.title }}»
+            </button>
+            <app-import-button variant="secondary" />
+          </div>
+        } @else {
+          <h1>Sigue leyendo</h1>
+          <p>Elige un libro de tu biblioteca, un clásico gratis o importa un EPUB nuevo.</p>
+          <app-import-button variant="hero" />
           <div class="recent">
             <p class="overline">Continuar leyendo</p>
             <div class="recent-grid">
@@ -50,10 +61,26 @@
             </div>
           </div>
         }
+        <p class="fine">o arrastra un EPUB aquí · sin DRM · tus libros no salen de tu dispositivo</p>
+
+        @if (library.availableClassics().length) {
+          <div class="recent">
+            <p class="overline">Clásicos gratis</p>
+            <div class="recent-grid">
+              @for (classic of library.availableClassics(); track classic.slug) {
+                <button class="recent-book" (click)="library.openClassic(classic)" [title]="classic.title">
+                  <span class="cover lg"><img [src]="coverUrl(classic)" alt="" loading="lazy"></span>
+                  <span class="recent-title">{{ classic.title }}</span>
+                  <span class="recent-progress">{{ classic.author }}{{ classic.lang === 'en' ? ' · inglés' : '' }}</span>
+                </button>
+              }
+            </div>
+          </div>
+        }
       </div>
     }
 
-    @if (reader.loading()) {
+    @if (reader.loading() || library.busy()) {
       <div class="loading" role="status"><span class="spinner"></span>Abriendo libro…</div>
     }
   </div>

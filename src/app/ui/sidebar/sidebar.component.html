@@ -1,7 +1,8 @@
 @if (layout.sidebarOpen()) {
   <div class="scrim" (click)="layout.closeSidebar()"></div>
 }
-<aside class="sidebar" [class.open]="layout.sidebarOpen()" aria-label="Índice, biblioteca y marcadores">
+<aside class="sidebar" [class.open]="layout.sidebarOpen()" aria-label="Índice, biblioteca y marcadores"
+       [appFocusTrap]="layout.sidebarOpen() && !layout.isDesktop()">
   <div class="tabs" role="tablist">
     <button role="tab" [class.active]="layout.sidebarTab() === 'toc'" [attr.aria-selected]="layout.sidebarTab() === 'toc'"
             (click)="layout.showTab('toc')">Índice</button>

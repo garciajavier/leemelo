@@ -2,10 +2,11 @@ import { Injectable, Injector, afterNextRender, computed, effect, inject, signal
 import { Observable, Subject } from 'rxjs';
 import ePub from 'epubjs';
 import { PreferencesService } from '../core/preferences/preferences.service';
+import { ThemeService } from '../core/ui/theme.service';
 import { BookDataRepository } from '../library/book-data.repository';
 import { BookContents, ReadingSurface, SurfaceClick } from '../narration/reading-surface';
 import { LOCATIONS_CACHE } from './locations-cache';
-import { KARAOKE_HIGHLIGHT, READER_PALETTES, themeRules } from './reader-themes';
+import { KARAOKE_HIGHLIGHT, READER_PALETTES, themeRules, typographyCss } from './reader-themes';
 import { TocItem, flattenToc, tocIndexOf } from './toc';
 
 export interface OpenedBook { title: string; author: string; }
@@ -13,11 +14,14 @@ export interface OpenedBook { title: string; author: string; }
 /** Characters per epub.js location: lower is more precise but slower to generate. */
 const CHARS_PER_LOCATION = 1600;
 const SWIPE = { minDistance: 50, maxDurationMs: 600, minRatio: 1.5 } as const;
+const TYPOGRAPHY_STYLE_ID = 'ek-typography';
+const FONTS_LINK_ID = 'ek-reading-fonts';
 
 /** Adapter over epub.js: rendering, navigation, themes, reading position/progress and the surface used by narration. */
 @Injectable({ providedIn: 'root' })
 export class ReaderService implements ReadingSurface {
   private readonly prefs = inject(PreferencesService);
+  private readonly themes = inject(ThemeService);
   private readonly bookData = inject(BookDataRepository);
   private readonly locationsCache = inject(LOCATIONS_CACHE);
   private readonly injector = inject(Injector);
@@ -31,6 +35,8 @@ export class ReaderService implements ReadingSurface {
   private readonly _toc = signal<TocItem[]>([]);
   private readonly _tocIndex = signal(-1);
   private readonly _cfi = signal('');
+  private readonly _chapterRemainingChars = signal<number | null>(null);
+  private readonly _totalChars = signal<number | null>(null);
 
   readonly bookId = this._bookId.asReadonly();
   readonly title = this._title.asReadonly();
@@ -44,6 +50,14 @@ export class ReaderService implements ReadingSurface {
   readonly tocIndex = this._tocIndex.asReadonly();
   readonly cfi = this._cfi.asReadonly();
   readonly chapter = computed(() => this._toc()[this._tocIndex()]?.label ?? '');
+  /** Characters from the current page to the end of the chapter (for time estimates). */
+  readonly chapterRemainingChars = this._chapterRemainingChars.asReadonly();
+  /** Approximate characters left in the book; null until locations are ready. */
+  readonly bookRemainingChars = computed(() => {
+    const total = this._totalChars();
+    const percent = this._percent();
+    return total === null || percent === null ? null : Math.round(total * (1 - percent / 100));
+  });
 
   private readonly interrupted = new Subject<void>();
   private readonly textClicks = new Subject<SurfaceClick>();
@@ -57,14 +71,24 @@ export class ReaderService implements ReadingSurface {
   private rendition: any;
   private resolveHost!: (host: HTMLElement) => void;
   private readonly host = new Promise<HTMLElement>(resolve => this.resolveHost = resolve);
-  private highlightedCfi = '';
+  private wordCfi = '';
+  private sentenceCfi = '';
   private pointerMode = false;
   private touchStart?: { x: number; y: number; t: number };
 
   constructor() {
     effect(() => {
-      const theme = this.prefs.theme();
+      const theme = this.themes.readerTheme();
       untracked(() => this.rendition?.themes.select(theme));
+    });
+    effect(() => {
+      this.prefs.fontFamily();
+      this.prefs.lineSpacing();
+      untracked(() => {
+        if (!this.rendition) return;
+        this.interrupt(); // re-pagination invalidates the narration position
+        for (const contents of this.rendition.getContents()) this.applyTypography(contents);
+      });
     });
     effect(() => {
       const size = this.prefs.fontSize();
@@ -122,6 +146,8 @@ export class ReaderService implements ReadingSurface {
     this._toc.set([]);
     this._tocIndex.set(-1);
     this._cfi.set('');
+    this._chapterRemainingChars.set(null);
+    this._totalChars.set(null);
   }
 
   async coverImage(): Promise<Blob | undefined> {
@@ -181,24 +207,32 @@ export class ReaderService implements ReadingSurface {
     try { return this.rendition?.getRange(this._cfi()) ?? null; } catch { return null; }
   }
 
-  async highlight(contents: BookContents, range: Range): Promise<void> {
+  async highlightWord(contents: BookContents, range: Range): Promise<void> {
     if (!this.rendition) return;
     const epubContents = contents as any;
-    const cfi = epubContents.cfiFromRange(range);
-    this.clearHighlight();
-    this.highlightedCfi = cfi;
-    const opacity = this.prefs.theme() === 'dark' ? KARAOKE_HIGHLIGHT.opacity.dark : KARAOKE_HIGHLIGHT.opacity.normal;
-    this.rendition.annotations.highlight(cfi, {}, undefined, KARAOKE_HIGHLIGHT.className, { fill: KARAOKE_HIGHLIGHT.fill, 'fill-opacity': opacity });
+    const cfi: string = epubContents.cfiFromRange(range);
+    if (this.wordCfi !== this.sentenceCfi) this.removeAnnotation(this.wordCfi);
+    // epub.js keys annotations by CFI and type: a one-word sentence is already marked by the sentence highlight.
+    this.wordCfi = cfi === this.sentenceCfi ? '' : cfi;
+    if (this.wordCfi) this.addHighlight(cfi, KARAOKE_HIGHLIGHT.word);
     // If the spoken word is in another column/page, turn to it.
     const rect = range.getBoundingClientRect();
     if (rect.left < -2 || rect.left > epubContents.window.innerWidth - 4) await this.rendition.display(cfi);
   }
 
+  highlightSentence(contents: BookContents, range: Range): void {
+    if (!this.rendition) return;
+    const cfi: string = (contents as any).cfiFromRange(range);
+    this.removeAnnotation(this.sentenceCfi);
+    this.sentenceCfi = cfi;
+    this.addHighlight(cfi, KARAOKE_HIGHLIGHT.sentence);
+  }
+
   clearHighlight(): void {
-    if (this.highlightedCfi && this.rendition) {
-      try { this.rendition.annotations.remove(this.highlightedCfi, 'highlight'); } catch { /* view already replaced */ }
-    }
-    this.highlightedCfi = '';
+    this.removeAnnotation(this.wordCfi);
+    this.removeAnnotation(this.sentenceCfi);
+    this.wordCfi = '';
+    this.sentenceCfi = '';
   }
 
   async showNextSection(contents: BookContents): Promise<BookContents | undefined> {
@@ -219,8 +253,11 @@ export class ReaderService implements ReadingSurface {
   private configure(rendition: any): void {
     rendition.themes.fontSize(`${this.prefs.fontSize()}%`);
     for (const [name, palette] of Object.entries(READER_PALETTES)) rendition.themes.register(name, themeRules(palette));
-    rendition.themes.select(this.prefs.theme());
-    rendition.hooks.content.register((contents: BookContents) => this.applyPointerCursor(contents));
+    rendition.themes.select(this.themes.readerTheme());
+    rendition.hooks.content.register((contents: BookContents) => {
+      this.applyPointerCursor(contents);
+      this.applyTypography(contents);
+    });
     // epub.js forwards iframe DOM events through passive listeners: they cannot be prevented.
     rendition.on('keydown', (event: KeyboardEvent) => this.keys.next(event));
     rendition.on('click', (event: MouseEvent, contents: BookContents) => this.textClicks.next({ contents, x: event.clientX, y: event.clientY }));
@@ -242,6 +279,22 @@ export class ReaderService implements ReadingSurface {
     this._page.set(displayed ? `Pág. ${displayed.page} de ${displayed.total}` : '');
     this._tocIndex.set(tocIndexOf(this._toc(), location?.start?.href ?? ''));
     this.updatePercent(location);
+    this.updateChapterRemaining();
+  }
+
+  private updateChapterRemaining(): void {
+    try {
+      const contents = this.visibleContents();
+      const start = this.startRange();
+      if (!contents || !start) { this._chapterRemainingChars.set(null); return; }
+      const doc = contents.document;
+      const range = doc.createRange();
+      range.setStart(start.startContainer, start.startOffset);
+      range.setEnd(doc.body, doc.body.childNodes.length);
+      this._chapterRemainingChars.set(range.toString().replace(/\s+/g, ' ').length);
+    } catch {
+      this._chapterRemainingChars.set(null);
+    }
   }
 
   /** Horizontal swipe on the page turns it (touch screens). */
@@ -267,7 +320,9 @@ export class ReaderService implements ReadingSurface {
         if (book !== this.book) return;
         void this.locationsCache.saveLocations(id, book.locations.save()).catch(() => undefined);
       }
-      if (book === this.book) this.updatePercent(this.rendition?.currentLocation());
+      if (book !== this.book) return;
+      this._totalChars.set(book.locations.length() * CHARS_PER_LOCATION);
+      this.updatePercent(this.rendition?.currentLocation());
     } catch { /* progress is optional: the book stays readable without it */ }
   }
 
@@ -278,6 +333,36 @@ export class ReaderService implements ReadingSurface {
     const percent = Math.round(fraction * 100);
     this._percent.set(percent);
     this.bookData.saveProgress(this._bookId(), percent);
+  }
+
+  /** User font and line spacing, injected into each section (webfonts come from our own origin). */
+  private applyTypography(contents: BookContents): void {
+    const doc = contents.document;
+    if (!doc.head) return;
+    if (!doc.getElementById(FONTS_LINK_ID)) {
+      const link = doc.createElement('link');
+      link.id = FONTS_LINK_ID;
+      link.rel = 'stylesheet';
+      link.href = new URL('fonts/reading-fonts.css', document.baseURI).href;
+      doc.head.appendChild(link);
+    }
+    let style = doc.getElementById(TYPOGRAPHY_STYLE_ID);
+    if (!style) {
+      style = doc.createElement('style');
+      style.id = TYPOGRAPHY_STYLE_ID;
+      doc.head.appendChild(style);
+    }
+    style.textContent = typographyCss(this.prefs.fontFamily(), this.prefs.lineSpacing());
+  }
+
+  private addHighlight(cfi: string, kind: { className: string; opacity: { normal: string; dark: string } }): void {
+    const opacity = this.themes.readerTheme() === 'dark' ? kind.opacity.dark : kind.opacity.normal;
+    this.rendition.annotations.highlight(cfi, {}, undefined, kind.className, { fill: KARAOKE_HIGHLIGHT.fill, 'fill-opacity': opacity });
+  }
+
+  private removeAnnotation(cfi: string): void {
+    if (!cfi || !this.rendition) return;
+    try { this.rendition.annotations.remove(cfi, 'highlight'); } catch { /* view already replaced */ }
   }
 
   private applyPointerCursor(contents: BookContents): void {

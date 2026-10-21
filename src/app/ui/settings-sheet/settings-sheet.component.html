@@ -1,59 +1,98 @@
 @if (layout.settingsOpen()) {
   <div class="scrim sheet-scrim" (click)="layout.closeSettings()"></div>
-  <section class="settings" role="dialog" aria-label="Voz y lectura">
+  <section class="settings" role="dialog" aria-modal="true" aria-label="Voz y lectura" appFocusTrap>
     <div class="sheet-handle"></div>
     <div class="settings-head">
       <strong>Voz y lectura</strong>
       <button class="icon-btn subtle" (click)="layout.closeSettings()" aria-label="Cerrar ajustes"><app-icon name="close" /></button>
     </div>
 
-    <label class="field">
-      <span>Voz</span>
-      <select (change)="voices.select(selectedValue($event))" [disabled]="!voices.all().length">
-        @if (!voices.all().length) {
-          <option value="">{{ voices.supported ? 'Cargando voces…' : 'No disponible en este navegador' }}</option>
-        }
-        @if (voices.spanish().length) {
-          <optgroup label="Español">
-            @for (voice of voices.spanish(); track voice.id) {
-              <option [value]="voice.id" [selected]="voice.id === voices.selectedId()">{{ voice.name }}</option>
-            }
-          </optgroup>
-        }
-        @if (voices.others().length) {
-          <optgroup label="Otros idiomas">
-            @for (voice of voices.others(); track voice.id) {
-              <option [value]="voice.id" [selected]="voice.id === voices.selectedId()">{{ voice.name }} ({{ voice.lang }})</option>
-            }
-          </optgroup>
-        }
-      </select>
-    </label>
+    <div class="field">
+      <label for="voice-select">Voz</label>
+      <div class="select-row">
+        <select id="voice-select" (change)="voices.select(selectedValue($event))" [disabled]="!voices.all().length">
+          @if (!voices.all().length) {
+            <option value="">{{ voices.supported ? 'Cargando voces…' : 'No disponible en este navegador' }}</option>
+          }
+          @if (voices.spanish().length) {
+            <optgroup label="Español">
+              @for (voice of voices.spanish(); track voice.id) {
+                <option [value]="voice.id" [selected]="voice.id === voices.selectedId()">{{ voice.name }}{{ voice.natural ? ' · natural' : '' }}</option>
+              }
+            </optgroup>
+          }
+          @if (voices.others().length) {
+            <optgroup label="Otros idiomas">
+              @for (voice of voices.others(); track voice.id) {
+                <option [value]="voice.id" [selected]="voice.id === voices.selectedId()">{{ voice.name }} ({{ voice.lang }}){{ voice.natural ? ' · natural' : '' }}</option>
+              }
+            </optgroup>
+          }
+        </select>
+        <button class="icon-btn outlined" (click)="readAloud.previewVoice()" [disabled]="!voices.all().length || narrating()"
+                aria-label="Probar voz" [title]="narrating() ? 'Detén la lectura para probar voces' : 'Probar voz'">
+          <app-icon name="volume" />
+        </button>
+      </div>
+      @if (suggestNatural()) {
+        <small class="tip">Consejo: las voces «natural» suenan mucho mejor.</small>
+      }
+    </div>
 
-    <label class="field">
-      <span>Velocidad <b>{{ prefs.rate().toFixed(1) }}×</b></span>
-      <select (change)="prefs.setRate(+selectedValue($event))">
+    <div class="field">
+      <label for="rate-select">Velocidad <b>{{ prefs.rate().toFixed(1) }}×</b></label>
+      <select id="rate-select" (change)="prefs.setRate(+selectedValue($event))">
         @for (rate of rates; track rate) {
           <option [value]="rate" [selected]="rate === prefs.rate()">{{ rate.toFixed(1) }}×</option>
         }
       </select>
-    </label>
+    </div>
 
     <div class="field">
-      <span>Tamaño de letra <b>{{ prefs.fontSize() }}%</b></span>
+      <span class="field-label">Temporizador de apagado @if (sleep.active()) { <b>{{ sleep.remainingLabel() }}</b> }</span>
+      <div class="choices" role="radiogroup" aria-label="Temporizador de apagado">
+        @for (option of sleepOptions; track option.mode) {
+          <button class="choice" [class.selected]="sleep.mode() === option.mode" role="radio" [attr.aria-checked]="sleep.mode() === option.mode"
+                  (click)="sleep.set(option.mode)">{{ option.label }}</button>
+        }
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field-label">Tamaño de letra <b>{{ prefs.fontSize() }}%</b></span>
       <div class="stepper">
-        <button class="icon-btn" (click)="prefs.changeFontSize(-fontSize.step)" [disabled]="prefs.fontSize() <= fontSize.min" aria-label="Reducir letra">
+        <button class="icon-btn outlined" (click)="prefs.changeFontSize(-fontSize.step)" [disabled]="prefs.fontSize() <= fontSize.min" aria-label="Reducir letra">
           <span class="aa sm">A</span>
         </button>
         <div class="meter"><span [style.width.%]="fontMeter()"></span></div>
-        <button class="icon-btn" (click)="prefs.changeFontSize(fontSize.step)" [disabled]="prefs.fontSize() >= fontSize.max" aria-label="Aumentar letra">
+        <button class="icon-btn outlined" (click)="prefs.changeFontSize(fontSize.step)" [disabled]="prefs.fontSize() >= fontSize.max" aria-label="Aumentar letra">
           <span class="aa lg">A</span>
         </button>
       </div>
     </div>
 
     <div class="field">
-      <span>Tema</span>
+      <span class="field-label">Tipo de letra</span>
+      <div class="choices" role="radiogroup" aria-label="Tipo de letra">
+        @for (family of fontFamilies; track family.id) {
+          <button class="choice" [class.selected]="prefs.fontFamily() === family.id" role="radio" [attr.aria-checked]="prefs.fontFamily() === family.id"
+                  [style.font-family]="family.stack ?? 'Georgia, serif'" (click)="prefs.setFontFamily(family.id)">{{ family.label }}</button>
+        }
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field-label">Interlineado</span>
+      <div class="choices segmented" role="radiogroup" aria-label="Interlineado">
+        @for (spacing of lineSpacings; track spacing.id) {
+          <button class="choice" [class.selected]="prefs.lineSpacing() === spacing.id" role="radio" [attr.aria-checked]="prefs.lineSpacing() === spacing.id"
+                  (click)="prefs.setLineSpacing(spacing.id)">{{ spacing.label }}</button>
+        }
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field-label">Tema</span>
       <div class="themes" role="radiogroup" aria-label="Tema de lectura">
         @for (theme of themes; track theme.id) {
           <button class="theme-opt" [attr.data-swatch]="theme.id" [class.selected]="prefs.theme() === theme.id"

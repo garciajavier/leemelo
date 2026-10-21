@@ -48,6 +48,27 @@ export function locateCaret(paragraphs: readonly Paragraph[], node: Node, offset
   return undefined;
 }
 
+/** Sentence terminator (with closing quotes/brackets) followed by whitespace. */
+const SENTENCE_END = /[.!?…]+["'»”’)\]]*\s+/gu;
+
+/** Offsets where sentences start in a paragraph's text (always includes 0). */
+export function sentenceStarts(text: string): number[] {
+  const starts = [0];
+  for (const match of text.matchAll(SENTENCE_END)) {
+    const next = (match.index ?? 0) + match[0].length;
+    if (next < text.length) starts.push(next);
+  }
+  return starts;
+}
+
+/** [start, end) of the sentence containing `offset`. */
+export function sentenceAt(text: string, offset: number): { start: number; end: number } {
+  const starts = sentenceStarts(text);
+  let index = 0;
+  while (index + 1 < starts.length && starts[index + 1] <= offset) index++;
+  return { start: starts[index], end: starts[index + 1] ?? text.length };
+}
+
 export function wordStart(text: string, offset: number): number {
   let i = offset;
   while (i > 0 && !/\s/u.test(text[i - 1])) i--;

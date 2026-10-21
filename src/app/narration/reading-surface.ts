@@ -17,8 +17,10 @@ export interface ReadingSurface {
   visibleContents(): BookContents | undefined;
   /** DOM range at the start of the current page, if known. */
   startRange(): Range | null;
-  /** Marks the range as the word being read and turns the page if it is not visible. */
-  highlight(contents: BookContents, range: Range): Promise<void>;
+  /** Marks the word being read (strong highlight) and turns the page if it is not visible. */
+  highlightWord(contents: BookContents, range: Range): Promise<void>;
+  /** Marks the sentence being read (soft highlight). */
+  highlightSentence(contents: BookContents, range: Range): void;
   clearHighlight(): void;
   /** Displays the section after `contents`; resolves undefined at the end of the book. */
   showNextSection(contents: BookContents): Promise<BookContents | undefined>;

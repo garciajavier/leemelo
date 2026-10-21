@@ -3,7 +3,8 @@ import { PreferencesService } from '../core/preferences/preferences.service';
 import { SPEECH_ENGINE, Voice } from './speech-engine';
 
 const isSpanish = (voice: Voice) => voice.lang.toLowerCase().startsWith('es');
-const byName = (a: Voice, b: Voice) => a.name.localeCompare(b.name);
+/** Natural voices first, then by name. */
+const byQuality = (a: Voice, b: Voice) => Number(b.natural) - Number(a.natural) || a.name.localeCompare(b.name);
 
 /** Available voices, grouped for the picker, and the effective voice to use. */
 @Injectable({ providedIn: 'root' })
@@ -13,19 +14,21 @@ export class VoicesService {
 
   readonly supported = this.engine.supported;
   readonly all = this.engine.voices;
-  readonly spanish = computed(() => this.all().filter(isSpanish).sort(byName));
-  readonly others = computed(() => this.all().filter(v => !isSpanish(v)).sort(byName));
+  readonly spanish = computed(() => this.all().filter(isSpanish).sort(byQuality));
+  readonly others = computed(() => this.all().filter(v => !isSpanish(v)).sort(byQuality));
 
   /**
-   * The saved voice when this browser has it; otherwise a Spanish one. The saved preference is kept,
+   * The saved voice when this browser has it; otherwise the best Spanish one. The saved preference is kept,
    * so it is used again as soon as it loads (some browsers load voices in several batches).
    */
   readonly selectedId = computed(() => {
     const voices = this.all();
     const preferred = this.prefs.voiceURI();
     if (voices.some(v => v.id === preferred)) return preferred;
-    return (voices.find(isSpanish) ?? voices[0])?.id ?? '';
+    const fallback = voices.find(v => isSpanish(v) && v.natural) ?? voices.find(isSpanish) ?? voices[0];
+    return fallback?.id ?? '';
   });
+  readonly selected = computed(() => this.all().find(v => v.id === this.selectedId()));
 
   select(voiceId: string): void { this.prefs.setVoice(voiceId); }
 }

@@ -2,15 +2,19 @@ import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core
 import { LibraryService } from '../../library/library.service';
 import { IconComponent } from './icon.component';
 
-/** File picker for EPUBs. "toolbar" collapses to an icon on phones; "hero" is the large call to action. */
+/**
+ * File picker for EPUBs. "toolbar" collapses to an icon on phones; "hero" is the large call to action;
+ * "secondary" is the large outlined variant.
+ */
 @Component({
   selector: 'app-import-button',
   imports: [IconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <label class="btn primary" [class.import]="variant() === 'toolbar'" [class.lg]="variant() === 'hero'" title="Importar EPUB">
+    <label class="btn" [class.primary]="variant() !== 'secondary'" [class.ghost]="variant() === 'secondary'"
+           [class.import]="variant() === 'toolbar'" [class.lg]="variant() !== 'toolbar'" title="Importar EPUB">
       <app-icon name="upload" />
-      <span class="import-label">Importar EPUB</span>
+      <span class="import-label">{{ variant() === 'secondary' ? 'Importar mi EPUB' : 'Importar EPUB' }}</span>
       <input type="file" accept=".epub,application/epub+zip" (change)="onFileChosen($event)" hidden>
     </label>`,
   styles: `
@@ -23,7 +27,7 @@ import { IconComponent } from './icon.component';
     }`,
 })
 export class ImportButtonComponent {
-  readonly variant = input<'toolbar' | 'hero'>('toolbar');
+  readonly variant = input<'toolbar' | 'hero' | 'secondary'>('toolbar');
   private readonly library = inject(LibraryService);
 
   protected async onFileChosen(event: Event): Promise<void> {

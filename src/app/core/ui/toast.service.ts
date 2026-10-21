@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 
-export interface Toast { text: string; kind: 'info' | 'error'; }
+export interface ToastAction { label: string; run: () => void; }
+export interface Toast { text: string; kind: 'info' | 'error'; action?: ToastAction; }
 
 const INFO_DURATION_MS = 4000;
 
@@ -11,13 +12,19 @@ export class ToastService {
   readonly current = this._current.asReadonly();
   private timer?: ReturnType<typeof setTimeout>;
 
-  info(text: string): void {
-    this.show({ text, kind: 'info' });
-    this.timer = setTimeout(() => this.dismiss(), INFO_DURATION_MS);
+  info(text: string, options: { action?: ToastAction; durationMs?: number } = {}): void {
+    this.show({ text, kind: 'info', action: options.action });
+    this.timer = setTimeout(() => this.dismiss(), options.durationMs ?? INFO_DURATION_MS);
   }
 
   error(text: string): void {
     this.show({ text, kind: 'error' });
+  }
+
+  runAction(): void {
+    const action = this._current()?.action;
+    this.dismiss();
+    action?.run();
   }
 
   dismiss(): void {

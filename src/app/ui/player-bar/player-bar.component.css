@@ -17,9 +17,19 @@
 .play-btn:active:not(:disabled) { transform: scale(.94); }
 .tools { display: flex; gap: 6px; }
 
+/* Phones: the timer is shown as a dot on the voice button; the full chip appears from tablet up. */
+.timer-chip { display: none; }
+.voice-chip { position: relative; }
+.timer-dot { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--surface); }
+
 /* Very narrow phones: drop the stop button (Esc / pause still available). */
 @media (max-width: 359px) {
   .stop-btn { display: none; }
+}
+
+@media (min-width: 600px) {
+  .timer-chip { display: inline-flex; }
+  .timer-dot { display: none; }
 }
 
 @media (min-width: 1024px) {

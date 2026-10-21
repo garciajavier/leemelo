@@ -4,13 +4,16 @@ Lector EPUB sin DRM que lee el libro en voz alta y resalta cada palabra mientras
 
 ## Funcionalidades
 
-- **Biblioteca local** (IndexedDB): los EPUB importados se guardan en el navegador con título, autor, portada y porcentaje leído.
-- **Índice** del libro con el capítulo actual marcado («Estás aquí»), **progreso del libro en %** y deslizador para saltar a cualquier punto.
-- **Narración** con la Web Speech API: voz, velocidad (0.5×–2×), pausa y continuar. Cambiar la voz o la velocidad se aplica al momento, desde la palabra actual.
-- **Modo karaoke**: resaltado palabra a palabra y paso de página automático.
-- **Leer desde clic**: con el modo activo, al tocar una palabra se empieza a leer desde ahí.
-- **Marcadores**, posición de lectura y preferencias (voz, velocidad, tamaño de letra, tema y último libro) guardados.
-- **Temas** claro, sepia y oscuro; importar arrastrando el fichero; gestos (deslizar para pasar página) y atajos de teclado (`Espacio`, `←` `→`, `Esc`).
+- **Primer uso en 5 segundos:** «Probar con Don Quijote» y **8 clásicos gratis** de dominio público (5 en español y 3 en inglés).
+- **Biblioteca local** (IndexedDB): libros importados y clásicos con portada y % leído. Al quitar un libro se puede **deshacer**.
+- **Índice** con «Estás aquí», **progreso del libro** en %, deslizador para saltar y **tiempo restante** estimado del capítulo y del libro.
+- **Narración** frase a frase con la Web Speech API: voces «natural» primero, **probar voz**, velocidad de 0.5× a 2× y **frase anterior/siguiente**. Cambiar la voz o la velocidad se aplica al momento.
+- **Karaoke a dos niveles:** frase actual en suave y palabra actual en amarillo, con paso de página y de capítulo automático.
+- **Leer desde clic:** con el modo activo, al tocar una palabra se lee desde ahí.
+- **Temporizador de apagado:** 15, 30 o 60 minutos, o al terminar el capítulo.
+- **Lectura cómoda:** tamaño de letra, tipo de letra (del libro, serif, sans, Atkinson Hyperlegible u OpenDyslexic), interlineado y temas automático, claro, sepia y oscuro.
+- **PWA:** instalable, funciona sin conexión, aviso de nueva versión y «Abrir con» archivos EPUB en escritorio.
+- **Mobile-first:** gestos (deslizar para pasar página), barra inferior y hoja de ajustes. Atajos de teclado (`Espacio`, `←` `→`, `Esc`). Pistas en el primer uso. Accesibilidad: foco dentro de los paneles, anuncio de capítulo y movimiento reducido.
 
 ## Requisitos
 
@@ -48,12 +51,14 @@ src/app/
 ├── app.config.ts            Qué implementación usa cada abstracción (InjectionToken)
 ├── core/
 │   ├── storage/             KeyValueStore (localStorage tras una interfaz)
-│   ├── preferences/         PreferencesService: voz, velocidad, letra, tema, último libro
-│   └── ui/                  LayoutService (panel lateral, ajustes) y ToastService (avisos)
+│   ├── preferences/         PreferencesService (voz, velocidad, letra, tipografía, tema, último libro)
+│   ├── pwa/                 Aviso de nueva versión y «Abrir con» (file handlers)
+│   └── ui/                  Layout, tema efectivo, avisos con acción y pistas de primer uso
 ├── library/
 │   ├── library.repository   IndexedDB: libros, ficheros EPUB y "locations"
 │   ├── book-data.repository Datos de cada libro: posición, marcadores, % leído
-│   ├── library.service      Casos de uso: importar, abrir, quitar, restaurar el último libro
+│   ├── library.service      Casos de uso: importar, abrir (también clásicos), quitar con deshacer, restaurar
+│   ├── classics.ts          Catálogo de clásicos incluidos (public/classics)
 │   └── bookmarks.service    Marcadores del libro abierto
 ├── reader/
 │   ├── reader.service       Adaptador de epub.js: render, navegación, temas, progreso
@@ -63,12 +68,14 @@ src/app/
 │   ├── web-speech-engine.ts Implementación con la Web Speech API
 │   ├── reading-surface.ts   Lo que la narración necesita del lector (READING_SURFACE)
 │   ├── text-segmenter.ts    Funciones puras: párrafos, palabras, rangos DOM
-│   ├── voices.service       Voces disponibles y voz efectiva
-│   └── read-aloud.service   Karaoke: narra, resalta, pasa página y capítulo, leer desde clic
+│   ├── voices.service       Voces disponibles (naturales primero) y voz efectiva
+│   ├── read-aloud.service   Karaoke frase a frase: resalta frase y palabra, salta frases, leer desde clic
+│   ├── sleep-timer.service  Temporizador de apagado
+│   └── reading-time.ts      Estimación de tiempo de escucha
 └── ui/                      Componentes standalone con OnPush y signals
     ├── top-bar, sidebar (índice, biblioteca, marcadores), reader-view,
     ├── player-bar, settings-sheet, toast
-    └── shared/              icon, cover, import-button
+    └── shared/              icon, cover, import-button, focus-trap
 ```
 
 - **Abstracciones inyectables:** `SPEECH_ENGINE`, `READING_SURFACE`, `KEY_VALUE_STORE` y `LOCATIONS_CACHE` se pueden sustituir. Por ejemplo, un TTS en la nube o un almacenamiento falso en pruebas, sin tocar a quien los usa.
@@ -83,3 +90,9 @@ src/app/
 - EPUB con maquetación compleja (tablas, diseño fijo) pueden narrarse incompletos o en otro orden.
 - La biblioteca es local: no se sincroniza entre dispositivos y se pierde si el usuario borra los datos del sitio.
 - EPUB con DRM no está soportado.
+
+## Créditos y licencias
+
+- **Clásicos** (`public/classics/`): obras de dominio público de [Project Gutenberg](https://www.gutenberg.org/), sin modificar. Cada EPUB incluye la licencia de Project Gutenberg. Se ofrecen gratis.
+- **Fuentes** (`public/fonts/`): Atkinson Hyperlegible (Braille Institute) y OpenDyslexic (Abbie Gonzalez), bajo SIL Open Font License 1.1 (ver `OFL-*.txt`).
+- **Librerías:** Angular, epub.js y JSZip (ver `package.json`).

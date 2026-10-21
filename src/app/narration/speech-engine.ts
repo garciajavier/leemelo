@@ -1,7 +1,8 @@
 import { InjectionToken, Signal } from '@angular/core';
 import { WebSpeechEngine } from './web-speech-engine';
 
-export interface Voice { id: string; name: string; lang: string; }
+/** `natural`: cloud/neural voice (e.g. Edge "Natural", Chrome "Google"), usually much better than system voices. */
+export interface Voice { id: string; name: string; lang: string; natural: boolean; }
 
 export interface UtteranceHandlers {
   /** Word boundary; `charIndex` is relative to the text passed to speak(). `charLength` is 0 when unknown. */

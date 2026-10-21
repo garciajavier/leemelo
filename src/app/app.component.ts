@@ -1,7 +1,10 @@
 import { ChangeDetectionStrategy, Component, HostListener, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { PreferencesService } from './core/preferences/preferences.service';
+import { AppUpdateService } from './core/pwa/app-update.service';
+import { FileLaunchService } from './core/pwa/file-launch.service';
+import { HintsService } from './core/ui/hints.service';
 import { LayoutService } from './core/ui/layout.service';
+import { ThemeService } from './core/ui/theme.service';
 import { LibraryService } from './library/library.service';
 import { ReadAloudService } from './narration/read-aloud.service';
 import { ReaderService } from './reader/reader.service';
@@ -13,7 +16,7 @@ import { SidebarComponent } from './ui/sidebar/sidebar.component';
 import { ToastComponent } from './ui/toast/toast.component';
 import { TopBarComponent } from './ui/top-bar/top-bar.component';
 
-/** App shell: layout, theme, drag-and-drop import and keyboard shortcuts. */
+/** App shell: layout, theme, drag-and-drop and "open with" import, keyboard shortcuts and first-use tips. */
 @Component({
   selector: 'app-root',
   imports: [TopBarComponent, SidebarComponent, ReaderViewComponent, PlayerBarComponent, SettingsSheetComponent, ToastComponent, IconComponent],
@@ -22,11 +25,12 @@ import { TopBarComponent } from './ui/top-bar/top-bar.component';
   styleUrl: './app.component.css',
 })
 export class AppComponent {
-  protected readonly prefs = inject(PreferencesService);
+  protected readonly themes = inject(ThemeService);
   private readonly reader = inject(ReaderService);
   private readonly readAloud = inject(ReadAloudService);
   private readonly library = inject(LibraryService);
   private readonly layout = inject(LayoutService);
+  private readonly hints = inject(HintsService);
   protected readonly dragging = signal(false);
 
   private readonly shortcuts: Record<string, () => unknown> = {
@@ -37,11 +41,18 @@ export class AppComponent {
   };
 
   constructor() {
+    inject(AppUpdateService); // offers to reload when a new version is installed
+    inject(FileLaunchService).listen(file => void this.library.importFile(file));
     void this.library.restore();
     this.reader.keydown$.pipe(takeUntilDestroyed()).subscribe(event => this.handleKey(event, true));
     // Opening a book shows its table of contents in the side panel.
     effect(() => {
       if (this.reader.bookId() && this.reader.toc().length) untracked(() => this.layout.showTab('toc'));
+    });
+    effect(() => {
+      if (this.reader.loaded() && this.layout.isTouch()) {
+        untracked(() => this.hints.once('swipe', 'Desliza el dedo para pasar página. Toca el título del capítulo para ver el índice.'));
+      }
     });
   }
 

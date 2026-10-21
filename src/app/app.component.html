@@ -1,4 +1,4 @@
-<div class="app" [attr.data-theme]="prefs.theme() === 'dark' ? 'dark' : 'light'"
+<div class="app" [attr.data-theme]="themes.appTheme()"
      (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
   <app-top-bar />
 

@@ -1,7 +1,8 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, inject, viewChild } from '@angular/core';
-import { PreferencesService } from '../../core/preferences/preferences.service';
 import { LayoutService } from '../../core/ui/layout.service';
+import { ThemeService } from '../../core/ui/theme.service';
 import { BookmarksService } from '../../library/bookmarks.service';
+import { SAMPLE_CLASSIC, classicCoverUrl } from '../../library/classics';
 import { LibraryService } from '../../library/library.service';
 import { ReaderService } from '../../reader/reader.service';
 import { CoverComponent } from '../shared/cover.component';
@@ -21,7 +22,9 @@ export class ReaderViewComponent implements AfterViewInit {
   protected readonly library = inject(LibraryService);
   protected readonly bookmarks = inject(BookmarksService);
   protected readonly layout = inject(LayoutService);
-  protected readonly prefs = inject(PreferencesService);
+  protected readonly themes = inject(ThemeService);
+  protected readonly sample = SAMPLE_CLASSIC;
+  protected readonly coverUrl = classicCoverUrl;
   private readonly viewer = viewChild.required<ElementRef<HTMLElement>>('viewer');
 
   ngAfterViewInit(): void {

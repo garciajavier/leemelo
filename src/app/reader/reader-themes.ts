@@ -1,4 +1,5 @@
 import { ReaderTheme } from '../core/preferences/reader-theme';
+import { FONT_FAMILIES, FontFamilyId, LINE_SPACINGS, LineSpacingId } from '../core/preferences/typography';
 
 export interface ReaderPalette { bg: string; fg: string; link: string; }
 
@@ -17,4 +18,19 @@ export function themeRules(palette: ReaderPalette): Record<string, Record<string
   };
 }
 
-export const KARAOKE_HIGHLIGHT = { className: 'karaoke-mark', fill: '#f6c945', opacity: { normal: '0.45', dark: '0.35' } } as const;
+/** Two-level karaoke: soft sentence background, strong word highlight. */
+export const KARAOKE_HIGHLIGHT = {
+  fill: '#f6c945',
+  sentence: { className: 'karaoke-sentence', opacity: { normal: '0.16', dark: '0.12' } },
+  word: { className: 'karaoke-mark', opacity: { normal: '0.45', dark: '0.35' } },
+} as const;
+
+/** CSS injected into each book section for the user's font and line spacing ("" keeps the book's own). */
+export function typographyCss(family: FontFamilyId, spacing: LineSpacingId): string {
+  const stack = FONT_FAMILIES.find(f => f.id === family)?.stack;
+  const lineHeight = LINE_SPACINGS.find(l => l.id === spacing)?.value;
+  let css = '';
+  if (stack) css += `body, p, li, div, span, blockquote, h1, h2, h3, h4, h5, h6, td, th, a, em, strong, i, b { font-family: ${stack} !important; }\n`;
+  if (lineHeight) css += `body, p, li, div, blockquote { line-height: ${lineHeight} !important; }\n`;
+  return css;
+}

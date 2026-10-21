@@ -1,0 +1,23 @@
+{
+  "name": "EPUB Karaoke · Lectura con voz sincronizada",
+  "short_name": "EPUB Karaoke",
+  "description": "Lee y escucha tus libros EPUB con el texto resaltado palabra a palabra.",
+  "lang": "es",
+  "dir": "ltr",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f3f4f7",
+  "theme_color": "#1d2b45",
+  "categories": ["books", "education", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "file_handlers": [
+    { "action": "/", "accept": { "application/epub+zip": [".epub"] } }
+  ]
+}

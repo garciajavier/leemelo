@@ -8,34 +8,52 @@
   </div>
 
   <div class="transport">
-    <button class="icon-btn" (click)="reader.previous()" [disabled]="!reader.loaded()" aria-label="Página anterior" title="Página anterior (←)">
-      <app-icon name="chevron-left" />
-    </button>
+    @if (narrating()) {
+      <button class="icon-btn" (click)="readAloud.skipSentence(-1)" aria-label="Frase anterior" title="Frase anterior">
+        <app-icon name="skip-back" />
+      </button>
+    } @else {
+      <button class="icon-btn" (click)="reader.previous()" [disabled]="!reader.loaded()" aria-label="Página anterior" title="Página anterior (←)">
+        <app-icon name="chevron-left" />
+      </button>
+    }
     <button class="play-btn" (click)="readAloud.toggle()" [disabled]="!reader.loaded() || !readAloud.supported"
             [attr.aria-label]="playLabel()" [title]="playLabel() + ' (Espacio)'">
       <app-icon [name]="readAloud.playing() ? 'pause' : 'play'" />
     </button>
-    <button class="icon-btn stop-btn" (click)="readAloud.stop()" [disabled]="!readAloud.playing() && !readAloud.paused()"
-            aria-label="Detener" title="Detener (Esc)">
+    <button class="icon-btn stop-btn" (click)="readAloud.stop()" [disabled]="!narrating()" aria-label="Detener" title="Detener (Esc)">
       <app-icon name="stop" />
     </button>
-    <button class="icon-btn" (click)="reader.next()" [disabled]="!reader.loaded()" aria-label="Página siguiente" title="Página siguiente (→)">
-      <app-icon name="chevron-right" />
-    </button>
+    @if (narrating()) {
+      <button class="icon-btn" (click)="readAloud.skipSentence(1)" aria-label="Frase siguiente" title="Frase siguiente">
+        <app-icon name="skip-forward" />
+      </button>
+    } @else {
+      <button class="icon-btn" (click)="reader.next()" [disabled]="!reader.loaded()" aria-label="Página siguiente" title="Página siguiente (→)">
+        <app-icon name="chevron-right" />
+      </button>
+    }
   </div>
 
   <div class="tools">
-    <button class="chip" [class.on]="readAloud.clickToRead()" (click)="readAloud.toggleClickToRead()" [disabled]="!reader.loaded()"
+    <button class="chip" [class.on]="readAloud.clickToRead()" (click)="toggleClickToRead()" [disabled]="!reader.loaded()"
             [attr.aria-pressed]="readAloud.clickToRead()" aria-label="Leer desde clic"
             title="Activa y toca una palabra del libro para leer desde ahí">
       <app-icon name="crosshair" />
       <span class="chip-label wide">Leer desde clic</span>
     </button>
+    @if (sleep.active()) {
+      <button class="chip on timer-chip" (click)="layout.openSettings()" [attr.aria-label]="'Temporizador: ' + sleep.remainingLabel()" title="Temporizador de apagado">
+        <app-icon name="moon" />
+        <span class="chip-label">{{ sleep.remainingLabel() }}</span>
+      </button>
+    }
     <button class="chip voice-chip" [class.on]="layout.settingsOpen()" (click)="layout.toggleSettings()" [attr.aria-expanded]="layout.settingsOpen()"
-            aria-label="Voz y ajustes de lectura" title="Elegir voz, velocidad, tamaño de letra y tema">
+            aria-label="Voz y ajustes de lectura" title="Elegir voz, velocidad, temporizador, letra y tema">
       <app-icon name="mic" />
       <span class="chip-label">Voz</span>
       <span class="chip-label wide rate-label">· {{ prefs.rate().toFixed(1) }}×</span>
+      @if (sleep.active()) { <span class="timer-dot" aria-hidden="true"></span> }
     </button>
   </div>
 </footer>

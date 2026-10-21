@@ -7,12 +7,17 @@ import { IconComponent } from '../shared/icon.component';
   imports: [IconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (toast.current(); as current) {
-      <div class="toast" [class.error]="current.kind === 'error'" role="status" aria-live="polite">
-        <span>{{ current.text }}</span>
-        <button class="icon-btn subtle" (click)="toast.dismiss()" aria-label="Cerrar aviso"><app-icon name="close" /></button>
-      </div>
-    }`,
+    <div class="live" role="status" aria-live="polite">
+      @if (toast.current(); as current) {
+        <div class="toast" [class.error]="current.kind === 'error'">
+          <span>{{ current.text }}</span>
+          @if (current.action) {
+            <button class="toast-action" (click)="toast.runAction()">{{ current.action.label }}</button>
+          }
+          <button class="icon-btn subtle" (click)="toast.dismiss()" aria-label="Cerrar aviso"><app-icon name="close" /></button>
+        </div>
+      }
+    </div>`,
   styles: `
     :host { display: contents; }
     .toast {
@@ -24,11 +29,16 @@ import { IconComponent } from '../shared/icon.component';
     .toast span { flex: 1; }
     .toast .icon-btn { color: rgb(255 255 255 / 70%); }
     .toast .icon-btn:hover { background: rgb(255 255 255 / 10%); }
+    .toast-action {
+      flex: none; min-height: 36px; padding: 0 12px; border: 0; border-radius: 10px;
+      background: rgb(255 255 255 / 14%); color: var(--accent); font-weight: 700;
+    }
+    .toast-action:hover { background: rgb(255 255 255 / 22%); }
     .toast.error { background: #a5352e; }
     :host-context(.app[data-theme='dark']) .toast:not(.error) { background: #2a3550; }
     @keyframes toast-in { from { opacity: 0; translate: 0 8px; } }
     @media (min-width: 600px) {
-      .toast { left: 50%; right: auto; width: max-content; max-width: 480px; translate: -50% 0; animation-name: toast-in-centered; }
+      .toast { left: 50%; right: auto; width: max-content; max-width: 520px; translate: -50% 0; animation-name: toast-in-centered; }
       @keyframes toast-in-centered { from { opacity: 0; translate: -50% 8px; } }
     }`,
 })

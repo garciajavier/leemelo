@@ -15,7 +15,10 @@ export class WebSpeechEngine implements SpeechEngine {
     const load = () => {
       const list = speechSynthesis.getVoices();
       this.native = new Map(list.map(v => [v.voiceURI, v]));
-      this._voices.set(list.map(v => ({ id: v.voiceURI, name: v.name, lang: v.lang })));
+      this._voices.set(list.map(v => ({
+        id: v.voiceURI, name: v.name, lang: v.lang,
+        natural: !v.localService || /natural|neural|online/i.test(v.name),
+      })));
     };
     load();
     // Voices load asynchronously (and in several batches in some browsers).
