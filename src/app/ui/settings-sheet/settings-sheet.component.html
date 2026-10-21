@@ -1,0 +1,67 @@
+@if (layout.settingsOpen()) {
+  <div class="scrim sheet-scrim" (click)="layout.closeSettings()"></div>
+  <section class="settings" role="dialog" aria-label="Voz y lectura">
+    <div class="sheet-handle"></div>
+    <div class="settings-head">
+      <strong>Voz y lectura</strong>
+      <button class="icon-btn subtle" (click)="layout.closeSettings()" aria-label="Cerrar ajustes"><app-icon name="close" /></button>
+    </div>
+
+    <label class="field">
+      <span>Voz</span>
+      <select (change)="voices.select(selectedValue($event))" [disabled]="!voices.all().length">
+        @if (!voices.all().length) {
+          <option value="">{{ voices.supported ? 'Cargando voces…' : 'No disponible en este navegador' }}</option>
+        }
+        @if (voices.spanish().length) {
+          <optgroup label="Español">
+            @for (voice of voices.spanish(); track voice.id) {
+              <option [value]="voice.id" [selected]="voice.id === voices.selectedId()">{{ voice.name }}</option>
+            }
+          </optgroup>
+        }
+        @if (voices.others().length) {
+          <optgroup label="Otros idiomas">
+            @for (voice of voices.others(); track voice.id) {
+              <option [value]="voice.id" [selected]="voice.id === voices.selectedId()">{{ voice.name }} ({{ voice.lang }})</option>
+            }
+          </optgroup>
+        }
+      </select>
+    </label>
+
+    <label class="field">
+      <span>Velocidad <b>{{ prefs.rate().toFixed(1) }}×</b></span>
+      <select (change)="prefs.setRate(+selectedValue($event))">
+        @for (rate of rates; track rate) {
+          <option [value]="rate" [selected]="rate === prefs.rate()">{{ rate.toFixed(1) }}×</option>
+        }
+      </select>
+    </label>
+
+    <div class="field">
+      <span>Tamaño de letra <b>{{ prefs.fontSize() }}%</b></span>
+      <div class="stepper">
+        <button class="icon-btn" (click)="prefs.changeFontSize(-fontSize.step)" [disabled]="prefs.fontSize() <= fontSize.min" aria-label="Reducir letra">
+          <span class="aa sm">A</span>
+        </button>
+        <div class="meter"><span [style.width.%]="fontMeter()"></span></div>
+        <button class="icon-btn" (click)="prefs.changeFontSize(fontSize.step)" [disabled]="prefs.fontSize() >= fontSize.max" aria-label="Aumentar letra">
+          <span class="aa lg">A</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="field">
+      <span>Tema</span>
+      <div class="themes" role="radiogroup" aria-label="Tema de lectura">
+        @for (theme of themes; track theme.id) {
+          <button class="theme-opt" [attr.data-swatch]="theme.id" [class.selected]="prefs.theme() === theme.id"
+                  role="radio" [attr.aria-checked]="prefs.theme() === theme.id" (click)="prefs.setTheme(theme.id)">
+            <span class="swatch">Aa</span>{{ theme.label }}
+          </button>
+        }
+      </div>
+    </div>
+  </section>
+}

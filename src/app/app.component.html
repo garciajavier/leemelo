@@ -1,0 +1,20 @@
+<div class="app" [attr.data-theme]="prefs.theme() === 'dark' ? 'dark' : 'light'"
+     (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
+  <app-top-bar />
+
+  <div class="workspace">
+    <app-sidebar />
+    <app-reader-view />
+  </div>
+
+  <app-player-bar />
+  <app-settings-sheet />
+
+  @if (dragging()) {
+    <div class="drop-overlay">
+      <div><app-icon name="upload" />Suelta el EPUB para añadirlo a tu biblioteca</div>
+    </div>
+  }
+
+  <app-toast />
+</div>

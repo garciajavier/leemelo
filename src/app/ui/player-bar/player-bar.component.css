@@ -1,0 +1,33 @@
+:host { display: contents; }
+
+.player {
+  z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 10px calc(8px + var(--safe-b));
+  background: var(--surface); border-top: 1px solid var(--border);
+}
+.now { display: none; }
+.transport { display: flex; align-items: center; gap: 2px; }
+.play-btn {
+  --icon-size: 26px;
+  display: grid; place-items: center; width: 56px; height: 56px; margin: 0 4px;
+  border: 0; border-radius: 50%; background: var(--brand); color: var(--brand-ink);
+  box-shadow: 0 6px 16px rgb(29 43 69 / 28%); transition: transform .1s, filter .15s;
+}
+.play-btn:hover:not(:disabled) { filter: brightness(1.12); }
+.play-btn:active:not(:disabled) { transform: scale(.94); }
+.tools { display: flex; gap: 6px; }
+
+/* Very narrow phones: drop the stop button (Esc / pause still available). */
+@media (max-width: 359px) {
+  .stop-btn { display: none; }
+}
+
+@media (min-width: 1024px) {
+  .player { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); padding: 12px 24px; }
+  .now { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .now-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .now-text strong, .now-text small { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .now-text strong { font-size: 14px; }
+  .now-text small { font-size: 12px; color: var(--muted); }
+  .tools { justify-self: end; }
+}

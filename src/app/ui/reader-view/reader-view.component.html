@@ -1,0 +1,60 @@
+<main class="stage">
+  @if (reader.loaded()) {
+    <div class="reader-head">
+      <button class="chapter-btn" (click)="layout.openSidebar('toc')" title="Ver índice">
+        <app-icon name="list" />
+        <span class="chapter">{{ reader.chapter() || reader.title() }}</span>
+      </button>
+      <span class="page">{{ reader.page() }}@if (reader.percent() !== null) { · <b>{{ reader.percent() }} %</b>}</span>
+      <button class="icon-btn" [class.on]="bookmarks.currentIsBookmarked()" (click)="bookmarks.toggleCurrent()"
+              [attr.aria-pressed]="bookmarks.currentIsBookmarked()"
+              [attr.aria-label]="bookmarks.currentIsBookmarked() ? 'Quitar marcador' : 'Marcar página'"
+              [title]="bookmarks.currentIsBookmarked() ? 'Quitar marcador' : 'Marcar página'">
+        <app-icon name="bookmark" />
+      </button>
+    </div>
+    <div class="progress-track" role="progressbar" aria-label="Progreso del libro"
+         aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="reader.percent() ?? 0">
+      <span [style.width.%]="reader.percent() ?? 0"></span>
+    </div>
+  }
+
+  <div class="paper" [attr.data-reader]="prefs.theme()" [class.idle]="!reader.loaded()">
+    <!-- Always laid out (only concealed) so epub.js can measure it when a book opens. -->
+    <div #viewer class="viewer" [class.concealed]="!reader.loaded()"></div>
+
+    @if (reader.loaded()) {
+      <button class="turn prev" (click)="reader.previous()" aria-label="Página anterior"><app-icon name="chevron-left" /></button>
+      <button class="turn next" (click)="reader.next()" aria-label="Página siguiente"><app-icon name="chevron-right" /></button>
+    }
+
+    @if (!reader.loaded() && !reader.loading()) {
+      <div class="empty">
+        <img class="empty-logo" src="logo.svg" alt="">
+        <h1>Tu próxima lectura empieza aquí</h1>
+        <p>Importa un EPUB y escúchalo con el texto resaltado palabra a palabra. Se guarda en tu biblioteca para retomarlo donde lo dejaste.</p>
+        <app-import-button variant="hero" />
+        <p class="fine">o arrástralo aquí · EPUB sin DRM · los libros no salen de tu dispositivo</p>
+        @if (library.entries().length) {
+          <div class="recent">
+            <p class="overline">Continuar leyendo</p>
+            <div class="recent-grid">
+              @for (entry of library.entries().slice(0, 4); track entry.id) {
+                @let percent = library.progress()[entry.id];
+                <button class="recent-book" (click)="library.open(entry)" [title]="entry.title">
+                  <app-cover size="lg" [src]="library.covers()[entry.id]" [title]="entry.title" />
+                  <span class="recent-title">{{ entry.title }}</span>
+                  <span class="recent-progress">{{ percent !== undefined ? percent + ' % leído' : 'Sin empezar' }}</span>
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    @if (reader.loading()) {
+      <div class="loading" role="status"><span class="spinner"></span>Abriendo libro…</div>
+    }
+  </div>
+</main>

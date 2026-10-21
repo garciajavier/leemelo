@@ -1,0 +1,32 @@
+@if (layout.sidebarOpen()) {
+  <div class="scrim" (click)="layout.closeSidebar()"></div>
+}
+<aside class="sidebar" [class.open]="layout.sidebarOpen()" aria-label="Índice, biblioteca y marcadores">
+  <div class="tabs" role="tablist">
+    <button role="tab" [class.active]="layout.sidebarTab() === 'toc'" [attr.aria-selected]="layout.sidebarTab() === 'toc'"
+            (click)="layout.showTab('toc')">Índice</button>
+    <button role="tab" [class.active]="layout.sidebarTab() === 'library'" [attr.aria-selected]="layout.sidebarTab() === 'library'"
+            (click)="layout.showTab('library')">
+      Biblioteca <span class="count">{{ library.entries().length }}</span>
+    </button>
+    <button role="tab" [class.active]="layout.sidebarTab() === 'bookmarks'" [attr.aria-selected]="layout.sidebarTab() === 'bookmarks'"
+            (click)="layout.showTab('bookmarks')">
+      Marcadores <span class="count">{{ bookmarks.items().length }}</span>
+    </button>
+  </div>
+
+  <div class="panel" role="tabpanel">
+    @switch (layout.sidebarTab()) {
+      @case ('toc') { <app-toc-panel /> }
+      @case ('library') { <app-library-panel /> }
+      @case ('bookmarks') { <app-bookmarks-panel /> }
+    }
+  </div>
+
+  <div class="shortcuts">
+    <p class="overline">Atajos de teclado</p>
+    <p><kbd>Espacio</kbd> reproducir o pausar</p>
+    <p><kbd>←</kbd> <kbd>→</kbd> cambiar de página</p>
+    <p><kbd>Esc</kbd> detener la lectura</p>
+  </div>
+</aside>
