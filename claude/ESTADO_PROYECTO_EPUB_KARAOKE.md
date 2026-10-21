@@ -79,6 +79,16 @@ Durante las pruebas locales se encontraron estos problemas:
 
 **Última verificación (21/10/2026):** `npm run build` compila sin errores y, con `ng serve` en `http://localhost:4300/`, Chrome headless renderiza la pantalla inicial con la consola limpia (solo mensajes de Vite y «Angular is running in development mode»). **Sigue sin confirmarse que se pueda abrir y narrar un EPUB real**: requiere prueba manual con fichero y audio.
 
+### 3.5 Refactor SOLID y control de versiones (21/10/2026)
+
+- **Refactor:** el antiguo `AppComponent` (~600 líneas, con todas las responsabilidades) se ha dividido en servicios por responsabilidad (`core/`, `library/`, `reader/`, `narration/`) y componentes por zona (`ui/`). La estructura está en el README.
+- **Abstracciones inyectables:** `SPEECH_ENGINE` (voz), `READING_SURFACE` (lo que la narración necesita del lector), `KEY_VALUE_STORE` (localStorage) y `LOCATIONS_CACHE` (IndexedDB). La narración ya no depende de epub.js.
+- **Estado con signals** y componentes `OnPush`: desaparecen todas las llamadas manuales a `detectChanges()`. La lógica de texto está en funciones puras (`text-segmenter.ts`), que se pueden probar con tests unitarios.
+- **Cambio de comportamiento menor:** la posición de lectura se guarda también durante la narración, así que se retoma donde iba la voz.
+- **Verificación:** la misma prueba de punta a punta (20 comprobaciones en móvil y escritorio, sobre la build de producción con la CSP) pasa entera y la consola queda limpia.
+- **Git:** repositorio inicializado en la rama `main` con `.gitignore` y `.gitattributes` (finales de línea LF).
+- **Análisis de producto:** ver `claude/ANALISIS_PRODUCTO.md` (funcionalidades, login, UX/UI, monetización, promoción y plan por fases).
+
 ### 3.4 Rediseño profesional, mobile-first y preparación para Netlify (21/10/2026)
 
 - **Interfaz rediseñada mobile-first**: barra de reproducción fija abajo (con área segura de iPhone), biblioteca como panel lateral deslizable en móvil y fijo en escritorio, ajustes como hoja inferior en móvil y ventana flotante en escritorio, botones de 44 px mínimo, gesto de deslizar para pasar página.
@@ -140,7 +150,7 @@ Durante las pruebas locales se encontraron estos problemas:
 
 ### Prioridad P4 — Calidad y evolución
 
-- [ ] Extraer `EpubReaderService`, `SpeechService`, `KaraokeSyncService` y `BookmarksService`.
+- [x] Extraer `EpubReaderService`, `SpeechService`, `KaraokeSyncService` y `BookmarksService` (hecho como `ReaderService`, `SpeechEngine`, `ReadAloudService` y `BookmarksService`).
 - [x] Migrar la biblioteca a IndexedDB para guardar también los archivos EPUB y no tener que reimportarlos.
 - [ ] Añadir pruebas unitarias, de integración y E2E.
 - [ ] Validar compatibilidad en Chrome, Edge, Firefox y navegadores móviles.
